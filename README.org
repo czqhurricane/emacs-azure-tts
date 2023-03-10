@@ -1,0 +1,96 @@
+#+LATEX_CLASS: my-article
+#+DATE: <2023-03-11 Sat 01:58>
+#+TITLE: README
+#+ROAM_KEY:
+#+PDF_KEY:
+#+PAGE_KEY:
+
+* 项目目的和声明
+- 本项目的目的是解决微软官方的网页版 demo，不能直接下载转换后的 MP3 文件。
+- 本项目仅用于学习交流禁止用于商业用途。
+
+* 感谢
+- https://github.com/skygongque/tts
+- https://github.com/manateelazycat/python-bridge
+
+得益于懒猫大神新开源的 python-bridge 使得在 Emacs 上和 Python 交互变得简单，该粗糙的项目得以完成。
+
+* 安装
+- 依赖 Python3 版本。
+- 使用 Emacs 包管理器下载或者 ~git clone~ 命令克隆包至本地。
+
+#+BEGIN_SRC
+(use-package emacs-azure-tts
+  :ensure t
+  :quelpa (emacs-azure-tts :fetcher github :repo "czqhurricnae/emacs-azure-tts" :branch "master" :files ("*.*")))
+#+END_SRC
+
+- 在本地包文件夹中，运行命令以安装依赖： ~python3 -m pip install -r requirements.txt~
+- 添加以下代码至你的 Emacs 配置中：
+
+#+BEGIN_SRC
+  (add-to-list 'load-path "<path-to-emacs-azure-tts>")
+
+  (require 'emacs-azure-tts)
+#+END_SRC
+
+* 使用
+- =M-x= 调用 ~emacs-azure-tts~ ，需要在 minibuffer 中输入需要朗读的文本。
+- =C-u M-x= 调用 ~emacs-azure-tts~ ，会提取光标下的 ~thing-at-point~ 句子作为输入，若无，则需要手动输入。
+- Azure TTS 返回的语音文件默认是存放在系统的临时文件夹中，可以通过配置 =emacs-azure-tts-audio-dir= 来更改存放路径。
+- 声音和风格修改：参考 https://github.com/skygongque/tts/tree/main/python_cli_demo 。通过修改本地包文件夹中 =SSML.xml= ：
+
+#+BEGIN_SRC
+<speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xmlns:emo="http://www.w3.org/2009/10/emotionml" version="1.0" xml:lang="en-US">
+  <voice name="en-US-GuyNeural">
+    <prosody rate="-10%" pitch="0%">
+     ${content}
+    </prosody>
+  </voice>
+</speak>
+#+END_SRC
+
+*注意文件中 ${content} 是占位符，不要修改或删除。*
+
+- https://azure.microsoft.com/zh-cn/products/cognitive-services/text-to-speech/#features ，该网址提供在线试听，以便选择自己喜欢的声音和风格。
+  [[file:demo/2023-03-11_02-28-11_screenshot.jpg]]
+
+- 如果需要在下载语音文件后进行自定义的处理，可以在 ~emacs-azure-tts-after-speak-functions~ 函数列表中添加处理函数，约定这些处理函数接收两个参数：
+  - 语音文件下载后存放的本地路径。
+  - 朗读的文本。
+- 代码示例：
+  #+BEGIN_SRC
+  (use-package emacs-azure-tts
+    :ensure t
+    :init
+    (require 'anki-editor)
+
+    (with-eval-after-load 'anki-editor
+     (defun emacs-azure-tts-add-card (deck front back)
+      (let ((bytes (with-temp-buffer
+                     (insert-file-contents-literally front)
+                     (buffer-string))))
+       (thread-last
+        (anki-editor-api-with-multi
+         (anki-editor-api-enqueue 'storeMediaFile
+                                  :filename (file-name-nondirectory front)
+                                  :data (base64-encode-string bytes))
+         (anki-editor-api-enqueue 'addNote
+                                  :note (list `("deckName" . ,deck)
+                                               '("modelName" . "Antimoon without expression")
+                                               `("fields" . ,(list `("audio" . ,(format "[sound:%s]" (file-name-nondirectory front)))
+                                                                   `("sentence" . ,back)))
+                                               `("options" . ,(list
+                                                               '("allowDuplicate" . t))))))))))
+    :config
+    (add-to-list 'emacs-azure-tts-after-speak-functions (apply-partially #'emacs-azure-tts-add-card Anki-deck-name))
+    )
+  #+END_SRC
+
+自定义了 ~(apply-partially #'emacs-azure-tts-add-card Anki-deck-name)~ 并添加到 ~emacs-azure-tts-after-speak-functions~ 列表中。
+达到在完成从 Azure TTS 下载语音文件后，会将语音文件和朗读文本发送至 Anki 的功能。
+
+- 演示
+https://youtu.be/SYYdj3fOmfo
+
+https://youtu.be/kLvh9bGX_l8
