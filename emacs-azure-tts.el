@@ -82,6 +82,15 @@ These functions take two arguments: Audio file and Sentence.")
       (setq sentence (thing-at-point 'sentence t))))
     sentence))
 
+(defun emacs-azure-tts-region-or-sentence ()
+  "Return region or sentence around point.
+If `mark-active' on, return region string.
+Otherwise return sentence around point."
+  (if mark-active
+      (buffer-substring-no-properties (region-beginning)
+                                      (region-end))
+    (emacs-azure-tts--sentence)))
+
 (defun emacs-azure-tts-after-speak (audio-file sentence)
   (run-hook-with-args-until-success
    'emacs-azure-tts-after-speak-functions audio-file sentence))
@@ -95,7 +104,7 @@ These functions take two arguments: Audio file and Sentence.")
   "Start emacs-azure-tts."
   (interactive "P")
 
-  (setq emacs-azure-tts-start-sentence (if arg (or (emacs-azure-tts--sentence) "") ""))
+  (setq emacs-azure-tts-start-sentence (if (or mark-active arg) (or (emacs-azure-tts-region-or-sentence) "") ""))
 
   (while (string-equal emacs-azure-tts-start-sentence "")
     (setq emacs-azure-tts-start-sentence (read-string "Please input the sentence to speak: "
