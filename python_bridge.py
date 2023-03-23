@@ -103,6 +103,12 @@ class MindWave:
         from emacs_azure_tts import run
         run(sentence)
 
+    def mpv(self, args):
+        from python_mpv_jsonipc import MPV
+        from utils import eval_in_emacs
+        mpv = MPV(start_mpv=False, ipc_socket=args[0])
+        eval_in_emacs("hurricane/subed--send-sentence-to-Anki", mpv.command(*args[1:]))
+
 if __name__ == "__main__":
     if len(sys.argv) >= 3:
         import cProfile
