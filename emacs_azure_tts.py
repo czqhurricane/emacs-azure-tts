@@ -107,7 +107,7 @@ def run(sentence):
     SSML_file = get_emacs_var('emacs-azure-tts-SSML-file')
     content = {'content': sentence}
     SSML_text = string.Template(get_SSML(SSML_file)).substitute(content)
-    file_name = 'emacs_azure_tts_'+ str(int(time.time()*1000))
+    file_name = 'emacs_azure_tts_' + str(int(time.time()*1000))
 
     asyncio.run(mainSeq(sentence, SSML_text, file_name))
 
