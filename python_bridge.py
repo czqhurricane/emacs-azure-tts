@@ -109,6 +109,20 @@ class MindWave:
         mpv = MPV(start_mpv=False, ipc_socket=args[0])
         eval_in_emacs("hurricane/subed--send-sentence-to-Anki", mpv.command(*args[1:]))
 
+    def deeplx(self, sentence):
+        import json
+        import requests
+
+        deeplx_api = "http://127.0.0.1:1188/translate"
+        data = {
+            "text": sentence,
+            "source_lang": "EN",
+            "target_lang": "ZH"
+        }
+        post_data = json.dumps(data)
+        translation = json.loads(requests.post(url = deeplx_api, data=post_data).text)["data"]
+        eval_in_emacs("youdao-dictionary--posframe-tip", translation)
+
 if __name__ == "__main__":
     if len(sys.argv) >= 3:
         import cProfile

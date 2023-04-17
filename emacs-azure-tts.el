@@ -91,9 +91,9 @@ Otherwise return sentence around point."
                                       (region-end))
     (emacs-azure-tts--sentence)))
 
-(defun emacs-azure-tts-after-speak (audio-file sentence)
+(defun emacs-azure-tts-after-speak (audio-file sentence translation)
   (run-hook-with-args-until-success
-   'emacs-azure-tts-after-speak-functions audio-file sentence))
+   'emacs-azure-tts-after-speak-functions audio-file sentence translation))
 
 (defun emacs-azure-tts-start ()
   (when (python-bridge-epc-live-p python-bridge-epc-process)
