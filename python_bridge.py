@@ -100,7 +100,7 @@ class MindWave:
         close_epc_client()
 
     def tts(self, sentence):
-        from emacs_azure_tts import run
+        from basic_generation import run
         run(sentence)
 
     def mpv(self, args):
