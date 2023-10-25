@@ -7,6 +7,7 @@ import json
 
 import edge_tts
 from utils import (eval_in_emacs, message_emacs, get_emacs_var)
+from PyDeepLX import PyDeepLX
 
 VOICE = 'en-US-GuyNeural'
 deeplx_api = "http://127.0.0.1:1188/translate"
@@ -21,7 +22,10 @@ async def _main(sentence, file_name) -> None:
         "target_lang": "ZH"
     }
     post_data = json.dumps(data)
-    translation = json.loads(requests.post(url = deeplx_api, data=post_data).text)["data"]
+    try:
+        translation = PyDeepLX.translate(text=sentence, sourceLang="EN", targetLang="ZH", numberAlternative=0, printResult=False, proxies="Http://0.0.0.0:8118")
+    except:
+        translation = json.loads(requests.post(url = deeplx_api, data=post_data).text)["data"]
     if audio_directory:
         full_output_path = os.path.join(audio_directory, file_name + '.mp3')
     else:
