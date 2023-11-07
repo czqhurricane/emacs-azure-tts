@@ -110,6 +110,8 @@ Otherwise return sentence around point."
     (setq emacs-azure-tts-start-sentence (read-string "Please input the sentence to speak: "
                            nil nil "" nil)))
 
+  (setq emacs-azure-tts-start-sentence (replace-regexp-in-string "[\t\n\r]+" " " emacs-azure-tts-start-sentence))
+
   (message "[emacs-azure-tts] To speak: '%s'" emacs-azure-tts-start-sentence)
 
   (emacs-azure-tts-start)

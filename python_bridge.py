@@ -103,6 +103,7 @@ class MindWave:
         from basic_generation import run
         run(sentence)
 
+    # python3 -m pip install python_mpv_jsonipc
     def mpv(self, args):
         from python_mpv_jsonipc import MPV
         from utils import eval_in_emacs
