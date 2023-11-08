@@ -98,6 +98,7 @@ async def transferMsTTSData(sentence, SSML_text, file_name):
             audio_out.write(audio_stream)
         eval_in_emacs('play-sound-file', full_output_path)
         message_emacs('Audio already downloaded in: ' + full_output_path)
+        # TODO emacs-azure-tts-after-speak 接收三个参数，缺少 translation。
         eval_in_emacs('emacs-azure-tts-after-speak', full_output_path, sentence)
 
 async def mainSeq(sentence, SSML_text, output_path):

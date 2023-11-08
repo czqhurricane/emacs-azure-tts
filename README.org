@@ -55,18 +55,19 @@
 - https://azure.microsoft.com/zh-cn/products/cognitive-services/text-to-speech/#features ，该网址提供在线试听，以便选择自己喜欢的声音和风格。
   [[file:demo/2023-03-11_02-28-11_screenshot.jpg]]
 
-- 如果需要在下载语音文件后进行自定义的处理，可以在 ~emacs-azure-tts-after-speak-functions~ 函数列表中添加处理函数，约定这些处理函数接收两个参数：
+- 如果需要在下载语音文件后进行自定义的处理，可以在 ~emacs-azure-tts-after-speak-functions~ 函数列表中添加处理函数，约定这些处理函数接收三个参数：
   - 语音文件下载后存放的本地路径。
-  - 朗读的文本。
+  - 朗读的外语文本。
+  - 翻译后的文本。
 - 代码示例：
-  #+BEGIN_SRC
+  #+BEGIN_SRC emacs-lisp
   (use-package emacs-azure-tts
     :ensure t
     :init
     (require 'anki-editor)
 
     (with-eval-after-load 'anki-editor
-     (defun emacs-azure-tts-add-card (deck front back)
+     (defun emacs-azure-tts-add-card (deck front back translation)
       (let ((bytes (with-temp-buffer
                      (insert-file-contents-literally front)
                      (buffer-string))))
@@ -79,7 +80,8 @@
                                   :note (list `("deckName" . ,deck)
                                                '("modelName" . "Antimoon without expression")
                                                `("fields" . ,(list `("audio" . ,(format "[sound:%s]" (file-name-nondirectory front)))
-                                                                   `("sentence" . ,back)))
+                                                                   `("sentence" . ,back)
+                                                                   `("translation" . ,translation)))
                                                `("options" . ,(list
                                                                '("allowDuplicate" . t))))))))))
     :config
