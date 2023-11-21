@@ -100,19 +100,17 @@ Otherwise return sentence around point."
     (python-bridge-call-async "tts" emacs-azure-tts-start-sentence)))
 
 ;;;###autoload
-(defun emacs-azure-tts (&optional arg)
+(defun emacs-azure-tts (&optional start-sentence arg)
   "Start emacs-azure-tts."
-  (interactive "P")
 
-  (setq emacs-azure-tts-start-sentence (if (or mark-active arg) (or (emacs-azure-tts-region-or-sentence) "") ""))
+  (interactive (list (read-string (format "[emacs-azure-tts] To speak(%s): " (or (emacs-azure-tts-region-or-sentence) ""))
+                                  (emacs-azure-tts-region-or-sentence)) "P"))
 
-  (while (string-equal emacs-azure-tts-start-sentence "")
-    (setq emacs-azure-tts-start-sentence (read-string "Please input the sentence to speak: "
+  (while (string-equal start-sentence "")
+    (setq start-sentence (read-string "Please input the sentence to speak: "
                            nil nil "" nil)))
 
-  (setq emacs-azure-tts-start-sentence (replace-regexp-in-string "[\t\n\r]+" " " emacs-azure-tts-start-sentence))
-
-  (message "[emacs-azure-tts] To speak: '%s'" emacs-azure-tts-start-sentence)
+  (setq emacs-azure-tts-start-sentence (replace-regexp-in-string "[\t\n\r]+" " " start-sentence))
 
   (emacs-azure-tts-start)
 
