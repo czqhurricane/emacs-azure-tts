@@ -127,7 +127,8 @@ class MindWave:
             translation = PyDeepLX.translate(text=sentence, sourceLang="EN", targetLang="ZH", numberAlternative=0, printResult=False, proxies="Http://0.0.0.0:8118")
         except:
             translation = json.loads(requests.post(url = deeplx_api, data=post_data).text)["data"]
-        eval_in_emacs("youdao-dictionary--posframe-tip", translation)
+        # eval_in_emacs("youdao-dictionary--posframe-tip", translation)
+        eval_in_emacs("hurricane//popweb-translate-select", sentence, translation)
 
 if __name__ == "__main__":
     if len(sys.argv) >= 3:
