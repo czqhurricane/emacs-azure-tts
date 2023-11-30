@@ -124,7 +124,7 @@ class MindWave:
         }
         post_data = json.dumps(data)
         try:
-            translation = PyDeepLX.translate(text=sentence, sourceLang="EN", targetLang="ZH", numberAlternative=0, printResult=False, proxies="Http://0.0.0.0:8118")
+            translation = PyDeepLX.translate(text=sentence, sourceLang="EN", targetLang="ZH", numberAlternative=0, printResult=False)
         except:
             translation = json.loads(requests.post(url = deeplx_api, data=post_data).text)["data"]
         # eval_in_emacs("youdao-dictionary--posframe-tip", translation)
