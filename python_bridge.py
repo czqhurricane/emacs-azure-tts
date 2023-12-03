@@ -26,6 +26,7 @@ from pathlib import Path
 from epc.server import ThreadingEPCServer
 from utils import (init_epc_client, eval_in_emacs, logger, close_epc_client, message_emacs)
 
+
 class MindWave:
     def __init__(self, args):
         # Init EPC client port.
@@ -100,21 +101,14 @@ class MindWave:
         close_epc_client()
 
     def tts(self, sentence):
+        # from emacs_azure_tts import run
         from basic_generation import run
         run(sentence)
 
-    # python3 -m pip install python_mpv_jsonipc
-    def mpv(self, args):
-        from python_mpv_jsonipc import MPV
-        from utils import eval_in_emacs
-        mpv = MPV(start_mpv=False, ipc_socket=args[0])
-        eval_in_emacs("hurricane/subed--send-sentence-to-Anki", mpv.command(*args[1:]))
-
-    def deeplx(self, sentence):
+    def deeplx_translate(sentence):
         import json
         import requests
         from PyDeepLX import PyDeepLX
-
 
         deeplx_api = "http://127.0.0.1:1188/translate"
         data = {
@@ -123,12 +117,31 @@ class MindWave:
             "target_lang": "ZH"
         }
         post_data = json.dumps(data)
+
         try:
             translation = PyDeepLX.translate(text=sentence, sourceLang="EN", targetLang="ZH", numberAlternative=0, printResult=False)
         except:
             translation = json.loads(requests.post(url = deeplx_api, data=post_data).text)["data"]
+        return translation
+
+    # python3 -m pip install python_mpv_jsonipc
+    def mpv(self, args):
+        from python_mpv_jsonipc import MPV
+        from utils import eval_in_emacs
+        translation = deeplx_translate(args[0])
+        mpv = MPV(start_mpv=False, ipc_socket=args[1])
+        eval_in_emacs("hurricane/subed--send-sentence-to-Anki", mpv.command(*args[2:]), translation)
+
+    def mpv_ontop(self, args):
+        from python_mpv_jsonipc import MPV
+
+        mpv = MPV(start_mpv=False, ipc_socket=args[0])
+        mpv.command(*args[1:])
+
+    def deeplx(self, sentence):
+        translation = deeplx_translate(sentence)
         # eval_in_emacs("youdao-dictionary--posframe-tip", translation)
-        eval_in_emacs("hurricane//popweb-translate-select", sentence, translation)
+        eval_in_emacs("hurricane//popweb-translation-show", sentence, translation)
 
 if __name__ == "__main__":
     if len(sys.argv) >= 3:
