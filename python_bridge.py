@@ -100,10 +100,13 @@ class MindWave:
         """Do some cleanup before exit python process."""
         close_epc_client()
 
-    def tts(self, sentence):
-        # from emacs_azure_tts import run
-        from basic_generation import run
-        run(sentence)
+    def tts(self, args):
+        from emacs_azure_tts import run
+        # from basic_generation import run
+        sentence = args[0]
+        audio_file = args[1]
+        not_after_speak = args[2]
+        run(sentence, audio_file, not_after_speak)
 
     def deeplx_translate(sentence):
         import json

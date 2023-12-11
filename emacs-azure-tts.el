@@ -95,16 +95,16 @@ Otherwise return sentence around point."
   (run-hook-with-args-until-success
    'emacs-azure-tts-after-speak-functions audio-file sentence translation))
 
-(defun emacs-azure-tts-start ()
+(defun emacs-azure-tts-start (&optional audio-file not-after-speak-p)
   (when (python-bridge-epc-live-p python-bridge-epc-process)
-    (python-bridge-call-async "tts" emacs-azure-tts-start-sentence)))
+    (python-bridge-call-async "tts" (list emacs-azure-tts-start-sentence audio-file not-after-speak-p))))
 
 ;;;###autoload
-(defun emacs-azure-tts (&optional start-sentence arg)
+(defun emacs-azure-tts (&optional start-sentence audio-file not-after-speak-p)
   "Start emacs-azure-tts."
 
   (interactive (list (read-string (format "[emacs-azure-tts] To speak(%s): " (or (emacs-azure-tts-region-or-sentence) ""))
-                                  (emacs-azure-tts-region-or-sentence)) "P"))
+                                  (emacs-azure-tts-region-or-sentence))))
 
   (while (string-equal start-sentence "")
     (setq start-sentence (read-string "Please input the sentence to speak: "
@@ -112,7 +112,7 @@ Otherwise return sentence around point."
 
   (setq emacs-azure-tts-start-sentence (replace-regexp-in-string "[\t\n\r]+" " " start-sentence))
 
-  (emacs-azure-tts-start)
+  (emacs-azure-tts-start audio-file not-after-speak-p)
 
   (unless python-bridge-is-starting
     (python-bridge-start-process)))
