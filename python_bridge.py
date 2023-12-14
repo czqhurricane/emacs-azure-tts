@@ -25,6 +25,7 @@ import sys
 from pathlib import Path
 from epc.server import ThreadingEPCServer
 from utils import (init_epc_client, eval_in_emacs, logger, close_epc_client, message_emacs)
+from python_mpv_jsonipc import MPV
 
 
 class MindWave:
@@ -128,23 +129,48 @@ class MindWave:
         return translation
 
     # python3 -m pip install python_mpv_jsonipc
-    def mpv(self, args):
-        from python_mpv_jsonipc import MPV
-        from utils import eval_in_emacs
+    def mpv_send_sentence_to_anki(self, args):
         translation = deeplx_translate(args[0])
         mpv = MPV(start_mpv=False, ipc_socket=args[1])
         eval_in_emacs("hurricane/subed--send-sentence-to-Anki", mpv.command(*args[2:]), translation)
 
     def mpv_ontop(self, args):
-        from python_mpv_jsonipc import MPV
-
         mpv = MPV(start_mpv=False, ipc_socket=args[0])
         mpv.command(*args[1:])
 
+    def mpv_cut_video(self, args):
+        import os
+        import re
+
+        mpv = MPV(start_mpv=False, ipc_socket=args[0])
+        full_file_path = args[1]
+        start_timestamp = args[2]
+        stop_timestamp = args[3]
+        duration = int(args[4])/1000.0
+        path = mpv.command(*args[5:])
+        if path.startswith("http"):
+            raw_source_url = os.popen("yt-dlp '{}' --print urls".format(path)).readlines()
+            if "bili" in path:
+                rep = {"?": r"\?", "&": r"\&", ",": r"\,"}
+
+                # @See: https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
+                rep = dict((re.escape(k), v) for k, v in rep.items())
+                pattern = re.compile("|".join(rep.keys()))
+                source_url = list(map(lambda text: pattern.sub(lambda m: rep[re.escape(m.group(0))], text.strip()), raw_source_url))
+                bili_final_cmd = f'ffmpeg -user_agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36 Edg/89.0.774.76 " -i {source_url[0]} -i {source_url[1]} -ss {start_timestamp} -t {duration} {full_file_path}'
+                eval_in_emacs("hurricane/reveal--cut-video", bili_final_cmd, full_file_path)
+            elif "youtube" in path:
+                source_url = list(map(lambda text: text.strip(), raw_source_url))
+                youtube_final_cmd = f'ffmpeg -ss {start_timestamp} -i "{source_url[0]}" -ss {start_timestamp} -i "{source_url[1]}" -ss 5 -map 0:v -map 1:a -c:v libx264 -c:a aac -t {duration} {full_file_path}'
+                eval_in_emacs("hurricane/reveal--cut-video", youtube_final_cmd, full_file_path)
+        else:
+            file_final_cmd = f'ffmpeg -i "{path}" -ss {start_timestamp} -to {stop_timestamp} -c:v copy -c:a copy {full_file_path}'
+            eval_in_emacs("hurricane/reveal--cut-video", file_final_cmd, full_file_path)
+
     def deeplx(self, sentence):
         translation = deeplx_translate(sentence)
-        # eval_in_emacs("youdao-dictionary--posframe-tip", translation)
         eval_in_emacs("hurricane//popweb-translation-show", sentence, translation)
+
 
 if __name__ == "__main__":
     if len(sys.argv) >= 3:
