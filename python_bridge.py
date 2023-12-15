@@ -109,7 +109,7 @@ class MindWave:
         not_after_speak = args[2]
         run(sentence, audio_file, not_after_speak)
 
-    def deeplx_translate(sentence):
+    def deeplx_translate(self, sentence):
         import json
         import requests
         from PyDeepLX import PyDeepLX
@@ -130,9 +130,39 @@ class MindWave:
 
     # python3 -m pip install python_mpv_jsonipc
     def mpv_send_sentence_to_anki(self, args):
-        translation = deeplx_translate(args[0])
-        mpv = MPV(start_mpv=False, ipc_socket=args[1])
-        eval_in_emacs("hurricane/subed--send-sentence-to-Anki", mpv.command(*args[2:]), translation)
+        import os
+        import re
+
+        mpv = MPV(start_mpv=False, ipc_socket=args[0])
+        mp3_full_file_path = args[1]
+        start_timestamp = args[2]
+        stop_timestamp = args[3]
+        duration = int(args[4])/1000.0
+        screenshot_full_file_path = args[5]
+        subtitle = args[6]
+        path = mpv.command(*args[7:])
+        translation = self.deeplx_translate(subtitle)
+        if path.startswith("http"):
+            raw_source_url = os.popen("yt-dlp '{}' --print urls".format(path)).readlines()
+            if "bili" in path:
+                rep = {"?": r"\?", "&": r"\&", ",": r"\,"}
+
+                # @See: https://stackoverflow.com/questions/6116978/how-to-replace-multiple-substrings-of-a-string
+                rep = dict((re.escape(k), v) for k, v in rep.items())
+                pattern = re.compile("|".join(rep.keys()))
+                source_url = list(map(lambda text: pattern.sub(lambda m: rep[re.escape(m.group(0))], text.strip()), raw_source_url))
+            elif "youtube" in path:
+                source_url = list(map(lambda text: text.strip(), raw_source_url))
+                final_cmd = f'ffmpeg -ss {start_timestamp} -to {stop_timestamp} -i "{source_url[1]}" -map_metadata -1 -ac 1 -codec:a libmp3lame -vbr on -compression_level 10 -application voip -b:a 24k "{mp3_full_file_path}" && ffmpeg -ss {stop_timestamp} -i "{source_url[0]}" -map_metadata -1 -vcodec mjpeg -lossless 0 -compression_level 6 -qscale:v 15 -vf scale=-2:200 -vframes 1 "{screenshot_full_file_path}"'
+                eval_in_emacs("hurricane/subed--send-sentence-to-Anki", final_cmd, mp3_full_file_path, subtitle, translation, screenshot_full_file_path)
+        else:
+            file_name, file_extension = os.path.splitext(path)
+            if file_extension == "mp3":
+                final_cmd = f'ffmpeg -i "{path}" -ss {start_timestamp} -to {stop_timestamp} -c:a copy {full_file_path}'
+                eval_in_emacs("hurricane/subed--send-sentence-to-Anki", final_cmd, mp3_full_file_path, subtitle, translation, screenshot_full_file_path)
+            else:
+                final_cmd = f'ffmpeg -ss {start_timestamp} -to {stop_timestamp} -i "{path}" -map_metadata -1 -map 0:1 -ac 1 -codec:a libmp3lame -vbr on -compression_level 10 -application voip -b:a 24k "{mp3_full_file_path}" && ffmpeg -ss {stop_timestamp} -i "{path}" -map_metadata -1 -vcodec mjpeg -lossless 0 -compression_level 6 -qscale:v 15 -vf scale=-2:200 -vframes 1 "{screenshot_full_file_path}"'
+                eval_in_emacs("hurricane/subed--send-sentence-to-Anki", final_cmd, mp3_full_file_path, subtitle, translation, screenshot_full_file_path)
 
     def mpv_ontop(self, args):
         mpv = MPV(start_mpv=False, ipc_socket=args[0])
@@ -168,7 +198,7 @@ class MindWave:
             eval_in_emacs("hurricane/reveal--cut-video", file_final_cmd, full_file_path)
 
     def deeplx(self, sentence):
-        translation = deeplx_translate(sentence)
+        translation = self.deeplx_translate(sentence)
         eval_in_emacs("hurricane//popweb-translation-show", sentence, translation)
 
 
