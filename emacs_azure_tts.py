@@ -43,17 +43,6 @@ def get_SSML(path):
 
 # Async function for actually communicating with the websocket
 async def transferMsTTSData(sentence, SSML_text, full_output_path, not_after_speak):
-    data = {
-        "text": sentence,
-        "source_lang": "EN",
-        "target_lang": "ZH"
-    }
-    post_data = json.dumps(data)
-    try:
-        translation = PyDeepLX.translate(text=sentence, sourceLang="EN", targetLang="ZH", numberAlternative=0, printResult=False, proxies="Http://0.0.0.0:8118")
-    except:
-        translation = json.loads(requests.post(url = deeplx_api, data=post_data).text)["data"]
-
     req_id = uuid.uuid4().hex.upper()
     print(req_id)
     # TOKEN来源 https://github.com/rany2/edge-tts/blob/master/src/edge_tts/constants.py
@@ -115,11 +104,21 @@ async def transferMsTTSData(sentence, SSML_text, full_output_path, not_after_spe
         os.makedirs(os.path.dirname(full_output_path), exist_ok=True)
         with open(full_output_path, 'wb') as audio_out:
             audio_out.write(audio_stream)
-        if not not_after_speak:
-            eval_in_emacs('emacs-azure-tts-after-speak', full_output_path, sentence, translation)
-        eval_in_emacs('play-sound-file', full_output_path)
-        eval_in_emacs("youdao-dictionary--posframe-tip", translation)
         message_emacs('Audio already downloaded in: ' + full_output_path)
+        if not not_after_speak:
+            data = {
+                "text": sentence,
+                "source_lang": "EN",
+                "target_lang": "ZH"
+            }
+            post_data = json.dumps(data)
+            try:
+                translation = PyDeepLX.translate(text=sentence, sourceLang="EN", targetLang="ZH", numberAlternative=0, printResult=False, proxies="Http://0.0.0.0:8118")
+            except:
+                translation = json.loads(requests.post(url = deeplx_api, data=post_data).text)["data"]
+            eval_in_emacs('emacs-azure-tts-after-speak', full_output_path, sentence, translation)
+            eval_in_emacs('play-sound-file', full_output_path)
+            eval_in_emacs("youdao-dictionary--posframe-tip", translation)
 
 async def mainSeq(sentence, SSML_text, full_output_path, not_after_speak):
     await transferMsTTSData(sentence, SSML_text, full_output_path, not_after_speak)
