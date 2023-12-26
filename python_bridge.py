@@ -174,9 +174,9 @@ class MindWave:
 
         mpv = MPV(start_mpv=False, ipc_socket=args[0])
         full_file_path = args[1]
-        start_timestamp = args[2]
-        stop_timestamp = args[3]
+        start_timestamp = args[2] if args[2] else mpv.command("get_property", "time-pos")
         duration = int(args[4])/1000.0
+        stop_timestamp = args[3] if args[3] else start_timestamp + duration
         path = mpv.command(*args[5:])
         if path.startswith("http"):
             raw_source_url = os.popen("yt-dlp '{}' --print urls".format(path)).readlines()
@@ -187,15 +187,15 @@ class MindWave:
                 rep = dict((re.escape(k), v) for k, v in rep.items())
                 pattern = re.compile("|".join(rep.keys()))
                 source_url = list(map(lambda text: pattern.sub(lambda m: rep[re.escape(m.group(0))], text.strip()), raw_source_url))
-                bili_final_cmd = f'ffmpeg -user_agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36 Edg/89.0.774.76 " -i {source_url[0]} -i {source_url[1]} -ss {start_timestamp} -t {duration} "{full_file_path}"'
-                eval_in_emacs("hurricane/reveal--cut-video", bili_final_cmd, full_file_path)
+                bili_final_cmd = f'ffmpeg -user_agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36 Edg/89.0.774.76 " -i {source_url[0]} -i {source_url[1]} -ss {start_timestamp} -t {duration} -y "{full_file_path}"'
+                eval_in_emacs("hurricane/reveal--cut-media", bili_final_cmd, full_file_path)
             elif "youtube" in path:
                 source_url = list(map(lambda text: text.strip(), raw_source_url))
-                youtube_final_cmd = f'ffmpeg -ss {start_timestamp} -i "{source_url[0]}" -ss {start_timestamp} -i "{source_url[1]}" -ss 5 -map 0:v -map 1:a -c:v libx264 -c:a aac -t {duration} "{full_file_path}"'
-                eval_in_emacs("hurricane/reveal--cut-video", youtube_final_cmd, full_file_path)
+                youtube_final_cmd = f'ffmpeg -ss {start_timestamp} -i "{source_url[0]}" -ss {start_timestamp} -i "{source_url[1]}" -ss 5 -map 0:v -map 1:a -c:v libx264 -c:a aac -t {duration} -y "{full_file_path}"'
+                eval_in_emacs("hurricane/reveal--cut-media", youtube_final_cmd, full_file_path)
         else:
-            file_final_cmd = f'ffmpeg -i "{path}" -ss {start_timestamp} -to {stop_timestamp} -c:v copy -c:a copy "{full_file_path}"'
-            eval_in_emacs("hurricane/reveal--cut-video", file_final_cmd, full_file_path)
+            file_final_cmd = f'ffmpeg -ss {start_timestamp} -t {duration} -i "{path}" -filter:v scale=1280:720 -c:v h264 -b:v 6m -c:a copy -y "{full_file_path}"'
+            eval_in_emacs("hurricane/reveal--cut-media", file_final_cmd, full_file_path)
 
     def deeplx(self, sentence):
         translation = self.deeplx_translate(sentence)
@@ -205,6 +205,12 @@ class MindWave:
         translation = self.deeplx_translate(args[0])
         eval_in_emacs("hurricane//reveal--comment-block-translate", translation, args[1])
 
+    def mpv_get_time_position(self, args):
+        mpv = MPV(start_mpv=False, ipc_socket=args[0])
+        point = args[1]
+        start_or_stop = args[2]
+        time_position = mpv.command(*args[3:])
+        eval_in_emacs("hurricane//slide--material-video-timestamp", str(point), start_or_stop, str(time_position))
 
 if __name__ == "__main__":
     if len(sys.argv) >= 3:
