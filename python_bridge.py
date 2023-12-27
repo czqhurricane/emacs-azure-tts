@@ -194,7 +194,7 @@ class MindWave:
                 youtube_final_cmd = f'ffmpeg -ss {start_timestamp} -i "{source_url[0]}" -ss {start_timestamp} -i "{source_url[1]}" -ss 5 -map 0:v -map 1:a -c:v libx264 -c:a aac -t {duration} -y "{full_file_path}"'
                 eval_in_emacs("hurricane/reveal--cut-media", youtube_final_cmd, full_file_path)
         else:
-            file_final_cmd = f'ffmpeg -ss {start_timestamp} -t {duration} -i "{path}" -filter:v scale=1280:720 -c:v h264 -b:v 6m -c:a copy -y "{full_file_path}"'
+            file_final_cmd = f'ffmpeg -ss {start_timestamp} -t {duration} -i "{path}" -filter:v scale=1280:720 -c:v h264 -b:v 6m -c:a copy -strict -2 -y "{full_file_path}"'
             eval_in_emacs("hurricane/reveal--cut-media", file_final_cmd, full_file_path)
 
     def deeplx(self, sentence):
