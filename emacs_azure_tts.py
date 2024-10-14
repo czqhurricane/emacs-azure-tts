@@ -12,10 +12,8 @@ import os
 import string
 import json
 
-from PyDeepLX import PyDeepLX
+from openai import OpenAI
 from utils import (eval_in_emacs, message_emacs, get_emacs_var)
-
-deeplx_api = "http://127.0.0.1:1188/translate"
 
 
 # Fix the time to match Americanisms
@@ -106,18 +104,21 @@ async def transferMsTTSData(sentence, SSML_text, full_output_path, not_after_spe
             audio_out.write(audio_stream)
         message_emacs('Audio already downloaded in: ' + full_output_path)
         if not not_after_speak:
-            data = {
-                "text": sentence,
-                "source_lang": "EN",
-                "target_lang": "ZH"
-            }
-            post_data = json.dumps(data)
-            try:
-                translation = PyDeepLX.translate(text=sentence, sourceLang="EN", targetLang="ZH", numberAlternative=0, printResult=False, proxies="Http://0.0.0.0:8118")
-            except:
-                translation = json.loads(requests.post(url = deeplx_api, data=post_data).text)["data"]
+            client = OpenAI(api_key=get_emacs_var("gt-chatgpt-key"), base_url="https://api.deepseek.com")
+
+            response = client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[
+                    {"role": "system", "content": "You are a translation assistant"},
+                    {"role": "user", "content": "Translate the text to Chinese, text is:{}".format(sentence)},
+                ],
+                stream=False
+            )
+
+            translation = response.choices[0].message.content
+
             eval_in_emacs('emacs-azure-tts-after-speak', full_output_path, sentence, translation)
-            eval_in_emacs('play-sound-file', full_output_path)
+            eval_in_emacs('mpv-play', full_output_path)
             eval_in_emacs("youdao-dictionary--posframe-tip", translation)
 
 async def mainSeq(sentence, SSML_text, full_output_path, not_after_speak):
