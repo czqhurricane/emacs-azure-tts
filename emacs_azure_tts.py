@@ -11,10 +11,16 @@ import tempfile
 import os
 import string
 import json
+import ssl
+import certifi
 
 from openai import OpenAI
 from utils import (eval_in_emacs, message_emacs, get_emacs_var)
 
+
+# 创建 SSL 上下文
+ssl_context = ssl.create_default_context()
+ssl_context.load_verify_locations(certifi.where())
 
 # Fix the time to match Americanisms
 def hr_cr(hr):
@@ -52,7 +58,9 @@ async def transferMsTTSData(sentence, SSML_text, full_output_path, not_after_spe
         + TRUSTED_CLIENT_TOKEN
     )
     endpoint2 = f"{WSS_URL}&ConnectionId={req_id}"
-    async with websockets.connect(endpoint2,extra_headers={
+    async with websockets.connect(endpoint2,
+                                  ssl=ssl_context,
+                                  extra_headers={
         "Pragma": "no-cache",
         "Cache-Control": "no-cache",
         "Origin": "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold",
