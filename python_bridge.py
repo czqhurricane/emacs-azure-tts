@@ -26,6 +26,7 @@ from pathlib import Path
 from epc.server import ThreadingEPCServer
 from utils import (init_epc_client, eval_in_emacs, logger, close_epc_client, message_emacs)
 from python_mpv_jsonipc import MPV
+import fitz
 
 
 class MindWave:
@@ -211,6 +212,15 @@ class MindWave:
         start_or_stop = args[2]
         time_position = mpv.command(*args[3:])
         eval_in_emacs("hurricane//slide--material-video-timestamp", str(point), start_or_stop, str(time_position))
+
+    def insert_pdf_toc(self, args):
+        input_file = args[0]
+        payload = args[1]
+        self.doc = fitz.open(input_file)
+        self.doc.set_toc(payload)
+        self.doc.saveIncr()
+        self.doc.close()
+
 
 if __name__ == "__main__":
     if len(sys.argv) >= 3:
